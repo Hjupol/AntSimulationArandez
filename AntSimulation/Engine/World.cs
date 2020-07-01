@@ -16,6 +16,9 @@ namespace AntSimulation
         private Size size = new Size(width, height);
         private List<GameObject> objects = new List<GameObject>();
 
+        private List<GameObject>[,] spatialObjects = new List<GameObject>[width,height];
+        private int cellSize = 1;
+
         public IEnumerable<GameObject> GameObjects { get { return objects.ToArray(); } }
 
         public int Width { get { return width; } }
@@ -47,19 +50,34 @@ namespace AntSimulation
         public void Add(GameObject obj)
         {
             objects.Add(obj);
+            if (!IsInside(obj.Position))
+            {
+                obj.Position = Mod(obj.Position, size);
+            }
+            GetBucketAt(obj.Position).Add(obj);
         }
 
         public void Remove(GameObject obj)
         {
             objects.Remove(obj);
+
+            GetBucketAt(obj.Position).Remove(obj);
         }
 
         public void Update()
         {
             foreach (GameObject obj in GameObjects)
             {
+                var oldPosition = obj.Position;
+
                 obj.InternalUpdateOn(this);
                 obj.Position = Mod(obj.Position, size);
+
+                if (oldPosition != obj.Position)
+                {
+                    GetBucketAt(oldPosition).Remove(obj);
+                    GetBucketAt(obj.Position).Add(obj);
+                }
             }
         }
 
@@ -82,14 +100,51 @@ namespace AntSimulation
             return Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2));
         }
 
+        public List<GameObject> GetBucketAt(PointF pos)
+        {
+            if (IsInside(pos))
+            {
+                var bucket = spatialObjects[(int)pos.X, (int)pos.Y];
+                if (bucket == null)
+                {
+                    bucket = new List<GameObject>();
+                    spatialObjects[(int)pos.X, (int)pos.Y] = bucket;
+                }
+                return bucket;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public List<GameObject> GetBucketAt(float x, float y)
+        {
+            if (IsInside(new PointF(x,y)))
+            {
+                var bucket = spatialObjects[(int)x, (int)y];
+                if (bucket == null)
+                {
+                    bucket = new List<GameObject>();
+                    spatialObjects[(int)x, (int)y] = bucket;
+                }
+                return bucket;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         // http://stackoverflow.com/a/10065670/4357302
         private static float Mod(float a, float n)
         {
             float result = a % n;
-            if ((a < 0 && n > 0) || (a > 0 && n < 0))
+            if ((result < 0 && n > 0) || (result > 0 && n < 0))
                 result += n;
             return result;
         }
+
         private static PointF Mod(PointF p, SizeF s)
         {
             return new PointF(Mod(p.X, s.Width), Mod(p.Y, s.Height));
@@ -97,8 +152,39 @@ namespace AntSimulation
         
         public IEnumerable<GameObject> GameObjectsNear(PointF pos, float dist = 1)
         {
-            return GameObjects.Where(t => Dist(t.Position, pos) < dist);
+            return ObjectsCloseTo(pos,dist);
         }
 
+
+        public List<GameObject> ObjectsCloseTo(PointF pos,float dist)
+        {
+            List<GameObject> objectsClose = new List<GameObject>();
+            for (int x = -1; x < 2; x++)
+            {
+                for (int y = -1; y < 2; y++)
+                {
+                    objectsClose.AddRange(CloseObj(pos, GetBucketAt(pos.X + x, pos.Y + y),dist));
+                }
+            }
+            return objectsClose;
+
+        }
+
+        public List<GameObject> CloseObj(PointF position, List<GameObject> bucketObjects,float dist)
+        {
+            List<GameObject> objectsCloseList = new List<GameObject>();
+            if (bucketObjects != null)
+            {
+                foreach (GameObject g in bucketObjects)
+                {
+                    if (Dist(position, g.Position) < dist
+                        && Dist(position, g.Position) < dist)
+                    {
+                        objectsCloseList.Add(g);
+                    }
+                }
+            }
+            return objectsCloseList;
+        }
     }
 }
