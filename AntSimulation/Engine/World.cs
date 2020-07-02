@@ -119,7 +119,17 @@ namespace AntSimulation
             }
             else
             {
-                return null;
+                pos = Mod(pos, size);
+
+                int convertedPosX = (int)(pos.X / cellSize);
+                int convertedPosY = (int)(pos.Y / cellSize);
+                var bucket = spatialObjects[convertedPosX, convertedPosY];
+                if (bucket == null)
+                {
+                    bucket = new List<GameObject>();
+                    spatialObjects[convertedPosX, convertedPosY] = bucket;
+                }
+                return bucket;
             }
         }
 
@@ -139,7 +149,18 @@ namespace AntSimulation
             }
             else
             {
-                return null;
+                x = Mod(x, size.Width);
+                y = Mod(y, size.Height);
+
+                int convertedPosX = (int)(x / cellSize);
+                int convertedPosY = (int)(y / cellSize);
+                var bucket = spatialObjects[convertedPosX, convertedPosY];
+                if (bucket == null)
+                {
+                    bucket = new List<GameObject>();
+                    spatialObjects[convertedPosX, convertedPosY] = bucket;
+                }
+                return bucket;
             }
         }
 
