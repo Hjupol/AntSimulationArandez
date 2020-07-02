@@ -13,17 +13,26 @@ namespace AntSimulation
         {
             if (intensity > 100) { intensity = 100; }
 
-            Pheromone[] neighbours = world.GameObjectsNear(pos)
-                .Select(each => each as Pheromone)
-                .Where(p => p != null)
-                .ToArray();
+            List<Pheromone> neighbours = PheromonesNear(pos, world);
+            //List<Pheromone> neighbours = world.PheromonesTestNear(pos)
+            //    .Select(each => each as Pheromone)
+            //    .Where(p => p != null).ToList();
 
-            if (neighbours.Length == 0)
+            if (neighbours.Count == 0)//Solo si la cantidad de vecinos es 0 deberia ejecutarse.
             {
                 // No objects there
-                Pheromone clone = new Pheromone(intensity);
+                Pheromone clone = new Pheromone(intensity);//Clona 
                 clone.Position = pos;
+                pheromones[(int)pos.X,(int)pos.Y]=clone;
+                //if (world.IsInside(clone.Position))
+                //{
                 world.Add(clone);
+                //}
+                //else
+                //{
+                //    clone.Position = Mod(clone.Position, world.size);
+                //    world.Add(clone);
+                //}
             }
             else
             {
@@ -36,6 +45,69 @@ namespace AntSimulation
                 }
             }
         }
+
+        public static GameObject[,] pheromones = new GameObject[125,125];
+
+        public static List<Pheromone> PheromonesNear(PointF pos,World world)
+        {
+            List<Pheromone> nearPheromones = new List<Pheromone>();
+            //if (pos.X > 1 && pos.X < 124 && pos.Y > 1 && pos.Y < 124)
+            //{
+            pos = Mod(pos, world.size);
+
+            for (int x = -1; x < 2; x++)
+            {
+                for (int y = -1; y < 2; y++)
+                {
+                    if((int)pos.X+x>0&& (int)pos.X + x < 125)
+                    {
+                        if ((int)pos.Y + y > 0 && (int)pos.Y + y < 125)
+                        {
+                            Pheromone pheromoneTest = (Pheromone)pheromones[(int)pos.X + x, (int)pos.Y + y];
+                            if (pheromoneTest != null)
+                            {
+                                if (world.Dist(pos, pheromoneTest.Position) < 1)
+                                {
+                                    nearPheromones.Add(pheromoneTest);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            //}
+            return nearPheromones;
+        }
+
+
+        // http://stackoverflow.com/a/10065670/4357302
+        private static float Mod(float a, float n)
+        {
+            float result = a % n;
+            if ((result < 0 && n > 0) || (result > 0 && n < 0))
+                result += n;
+            return result;
+        }
+
+        private static PointF Mod(PointF p, SizeF s)
+        {
+            return new PointF(Mod(p.X, s.Width), Mod(p.Y, s.Height));
+        }
+
+        //public static GameObject[,] pheromones=new GameObject[125,125];
+
+        //public static Pheromone[] PheromonesNear(Point pos)
+        //{
+        //    Pheromone[] nearPheromones;
+        //    for (int x = -1; x < 2; x++)
+        //    {
+        //        for (int y = -1; y < 2; y++)
+        //        {
+        //            if(pheromones[x,y])
+        //        }
+        //    }
+        //    return nearPheromones;
+        //}
 
         private double intensity;
 
@@ -83,7 +155,9 @@ namespace AntSimulation
                     if (squaredDist <= radius)
                     {
                         double diffuse = 0.75;
-                        SpawnOn(world, new PointF(x, y), intensity * diffuse);
+                        PointF point = new PointF(x, y);
+                        point = Mod(point, world.size);
+                        SpawnOn(world, point, intensity * diffuse);
                     }
                 }
             }

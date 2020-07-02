@@ -13,11 +13,13 @@ namespace AntSimulation
 
         private const int width = 125;
         private const int height = 125;
-        private Size size = new Size(width, height);
-        private List<GameObject> objects = new List<GameObject>();
+        public Size size = new Size(width, height);
+        private HashSet<GameObject> objects = new HashSet<GameObject>();
 
         private List<GameObject>[,] spatialObjects = new List<GameObject>[width,height];
         private int cellSize = 1;
+        private Pen pen = new Pen(Color.Wheat);
+        
 
         public IEnumerable<GameObject> GameObjects { get { return objects.ToArray(); } }
 
@@ -86,7 +88,8 @@ namespace AntSimulation
             graphics.FillRectangle(Brushes.White, 0, 0, width, height);
             foreach (GameObject obj in GameObjects)
             {
-                graphics.FillRectangle(new Pen(obj.Color).Brush, obj.Bounds);
+                pen.Color = obj.Color;
+                graphics.FillRectangle(pen.Brush, obj.Bounds);
             }
         }
 
@@ -104,11 +107,13 @@ namespace AntSimulation
         {
             if (IsInside(pos))
             {
-                var bucket = spatialObjects[(int)pos.X, (int)pos.Y];
+                int convertedPosX = (int)(pos.X / cellSize);
+                int convertedPosY = (int)(pos.Y / cellSize);
+                var bucket = spatialObjects[convertedPosX, convertedPosY];
                 if (bucket == null)
                 {
                     bucket = new List<GameObject>();
-                    spatialObjects[(int)pos.X, (int)pos.Y] = bucket;
+                    spatialObjects[convertedPosX, convertedPosY] = bucket;
                 }
                 return bucket;
             }
@@ -122,11 +127,13 @@ namespace AntSimulation
         {
             if (IsInside(new PointF(x,y)))
             {
-                var bucket = spatialObjects[(int)x, (int)y];
+                int convertedPosX = (int)(x / cellSize);
+                int convertedPosY = (int)(y / cellSize);
+                var bucket = spatialObjects[convertedPosX, convertedPosY];
                 if (bucket == null)
                 {
                     bucket = new List<GameObject>();
-                    spatialObjects[(int)x, (int)y] = bucket;
+                    spatialObjects[convertedPosX, convertedPosY] = bucket;
                 }
                 return bucket;
             }
@@ -155,6 +162,10 @@ namespace AntSimulation
             return ObjectsCloseTo(pos,dist);
         }
 
+        public IEnumerable<GameObject> PheromonesTestNear(PointF pos, float dist = 1)
+        {
+            return GameObjects.Where(t => Dist(t.Position, pos) < dist);
+        }
 
         public List<GameObject> ObjectsCloseTo(PointF pos,float dist)
         {
@@ -168,6 +179,19 @@ namespace AntSimulation
             }
             return objectsClose;
 
+        }
+
+        public List<GameObject> GetPheromonesCloseTo(PointF pos)
+        {
+            List<GameObject> objectsClose = new List<GameObject>();
+            for (int x = -1; x < 2; x++)
+            {
+                for (int y = -1; y < 2; y++)
+                {
+                    GetBucketAt(pos);
+                }
+            }
+            return objectsClose;
         }
 
         public List<GameObject> CloseObj(PointF position, List<GameObject> bucketObjects,float dist)

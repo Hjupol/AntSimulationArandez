@@ -69,6 +69,10 @@ namespace AntSimulation
         private void updateTimer_Tick(object sender, EventArgs e)
         {
             Text = world.GameObjects.Count().ToString();
+            //if (world.GameObjects.Count() > 5000)
+            //{
+            //    int leee = 3;
+            //}
             ClientSize = new Size(world.Width * scale, world.Height * scale);
             world.Update();
             Refresh();
