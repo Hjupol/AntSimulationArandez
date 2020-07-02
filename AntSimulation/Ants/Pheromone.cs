@@ -23,10 +23,24 @@ namespace AntSimulation
                 // No objects there
                 Pheromone clone = new Pheromone(intensity);//Clona 
                 clone.Position = pos;
-                pheromones[(int)pos.X,(int)pos.Y]=clone;
+
+                //Verifica si ya hay una feromona en esa posición.
+                Pheromone pheromoneVerification = (Pheromone)pheromones[(int)pos.X, (int)pos.Y];
+                if (pheromoneVerification != null)
+                {
+                    world.Remove(pheromoneVerification);
+                    pheromones[(int)pos.X, (int)pos.Y] = clone;
+                    world.Add(clone);
+                }
+                else
+                {
+                    pheromones[(int)pos.X, (int)pos.Y] = clone;
+                    world.Add(clone);
+                }
+
                 //if (world.IsInside(clone.Position))
                 //{
-                world.Add(clone);
+
                 //}
                 //else
                 //{
@@ -127,6 +141,7 @@ namespace AntSimulation
         {
             if (intensity <= 1)
             {
+                pheromones[(int)this.Position.X, (int)this.Position.Y] = null;
                 world.Remove(this);
             }
             else
